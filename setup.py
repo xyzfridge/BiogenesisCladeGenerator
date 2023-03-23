@@ -3,7 +3,7 @@ from pathlib import Path
 import shutil
 
 
-VERSION = "0.0.1"
+VERSION = "0.0.2"
 name = f"cladegenerator-{VERSION}"
 
 
