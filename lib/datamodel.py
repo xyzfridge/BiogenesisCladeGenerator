@@ -216,7 +216,7 @@ class Clade:
     def __init__(self, clade_string: str):
         self._string: str = clade_string
 
-        base_id_string, lineage_string = re.match(r"^(?:ID:)(\d+)([\s\S]*)$", self._string).groups()
+        base_id_string, lineage_string = re.match(r"^(?:.*:)?(\d+)([\s\S]*)$", self._string).groups()
         self._base_id: int = int(base_id_string)
         self._lineage: list[str] = re.findall(r"[\da-f]+", lineage_string)
 
