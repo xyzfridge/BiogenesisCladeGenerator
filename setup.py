@@ -11,16 +11,15 @@ def main():
     PyInstaller.__main__.run([
         "cladegenerator.py",
         "--noconfirm",
-        "--name", name,
         "--specpath", "spec"
     ])
 
-    dist = Path("dist") / name
+    dist = Path(r"dist/cladegenerator")
 
     shutil.copy2("cladegenerator.py", dist)
     shutil.copytree("lib", dist / "lib")
 
-    shutil.make_archive(dist, "zip", dist)
+    shutil.make_archive(dist.parent / name, "zip", dist)
 
 
 if __name__ == "__main__":
