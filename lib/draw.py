@@ -3,7 +3,7 @@ from __future__ import annotations
 from PIL import ImageDraw, Image
 from pyglet.math import Vec2
 from typing import Generator
-from functools import cache, cached_property
+from functools import cached_property
 
 from .datamodel import Organism, Clade
 from .composite import WorldComposite, Species
