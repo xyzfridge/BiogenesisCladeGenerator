@@ -414,4 +414,5 @@ class CladeDiagram:
 
             bubble.draw(draw)
 
+        print("Writing clade.png...")
         image.save(path)
