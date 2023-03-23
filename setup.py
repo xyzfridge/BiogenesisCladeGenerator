@@ -3,8 +3,7 @@ from pathlib import Path
 import shutil
 
 
-VERSION = "0.0.1"
-name = f"cladegenerator-{VERSION}"
+VERSION = "0.0.2"
 
 
 def main():
@@ -14,12 +13,14 @@ def main():
         "--specpath", "spec"
     ])
 
-    dist = Path(r"dist/cladegenerator")
+    dist = Path(r"dist")
+    cladegenerator = dist / "cladegenerator"
 
-    shutil.copy2("cladegenerator.py", dist)
-    shutil.copytree("lib", dist / "lib")
+    shutil.copy2("cladegenerator.py", cladegenerator)
+    shutil.copytree("lib", cladegenerator / "lib")
 
-    shutil.make_archive(dist.parent / name, "zip", dist)
+    pack = Path("pack")
+    shutil.make_archive(pack / f"cladegenerator-{VERSION}", "zip", dist)
 
 
 if __name__ == "__main__":
