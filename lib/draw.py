@@ -388,6 +388,7 @@ class CladeDiagram:
                 yield species.diagram_element
 
     def render_to_file(self, path):
+        print("Initializing image...")
         image = Image.new("RGB", (self.width, self.height), (0, 0, 0))
         draw = CladeDraw(image)
 
