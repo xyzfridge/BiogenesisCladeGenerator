@@ -16,7 +16,7 @@ GENERATION_LINE_COLOR = (37, 63, 63)
 EDGE_MARGIN = 25
 
 BUBBLE_PADDING = 14
-BUBBLE_MIN_SIZE = 24
+BUBBLE_MIN_RADIUS = 24
 CONNECTOR_MARGIN = 45
 SPECIES_MARGIN = 60
 SPECIES_MIN_WIDTH = 80
@@ -110,7 +110,7 @@ class DiagramBubble:
 
     @property
     def radius(self) -> int:
-        return max(round(self.organism.radius) + BUBBLE_PADDING, BUBBLE_MIN_SIZE)
+        return max(round(self.organism.radius) + BUBBLE_PADDING, BUBBLE_MIN_RADIUS)
 
     @property
     def diameter(self) -> int:
@@ -337,9 +337,15 @@ class CladeGeneration:
         return before[-1] if before else None
 
     def height(self) -> int:
+        if not self.species:
+            return BUBBLE_MIN_RADIUS * 2
+
         return max(s.diagram_element.diameter for s in self.species)
 
     def width(self) -> int:
+        if not self.species:
+            return BUBBLE_MIN_RADIUS * 2 + EDGE_MARGIN * 2
+
         last_bubble = self.species[-1].diagram_element
         return last_bubble.x + last_bubble.radius + EDGE_MARGIN
 
@@ -380,7 +386,7 @@ class CladeDiagram:
 
     @cached_property
     def width(self) -> int:
-        return max(g.width() for g in self.generations) + EDGE_MARGIN * 2
+        return max(g.width() for g in self.generations)
 
     @cached_property
     def height(self) -> int:
