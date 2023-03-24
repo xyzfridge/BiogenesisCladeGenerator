@@ -139,7 +139,7 @@ def load_composite_from_cache(path, verbose=False):
     composite = WorldComposite(data)
 
     if verbose:
-        print(f"Loaded {path.name} from cache.")
+        print(f"Loaded {path.stem} from cache.")
 
     return composite
 
