@@ -111,20 +111,13 @@ def _get_clade_cache_dir(path):
     return cache_dir
 
 
-def load_composite(path, verbose=False) -> WorldComposite:
+def load_composite_from_bgw(path, verbose=False) -> WorldComposite:
     path = Path(path)
 
     cache = _get_clade_cache_dir(path.parent)
 
     if (cached_composite := cache / f"{path.stem}.json").exists():
-        with cached_composite.open('r') as file:
-            data = json.load(file)
-        composite = WorldComposite(data)
-
-        if verbose:
-            print(f"Loaded {path.name} from cache.")
-
-        return composite
+        return load_composite_from_cache(cached_composite, verbose)
     else:
         world = load_bgw_as_world(path, verbose=verbose)
         composite = WorldComposite(world)
@@ -138,10 +131,31 @@ def load_composite(path, verbose=False) -> WorldComposite:
         return composite
 
 
+def load_composite_from_cache(path, verbose=False):
+    path = Path(path)
+
+    with path.open('r') as file:
+        data = json.load(file)
+    composite = WorldComposite(data)
+
+    if verbose:
+        print(f"Loaded {path.name} from cache.")
+
+    return composite
+
+
 def load_composites(path, verbose=False) -> list[WorldComposite]:
     path = Path(path)
 
-    composites = [load_composite(fp, verbose=verbose) for fp in path.glob('*@*.bgw')]
+    composites = []
+
+    cached_jsons = [fp for fp in _get_clade_cache_dir(path).glob('*.json')]
+    composites += [load_composite_from_cache(fp, verbose=verbose) for fp in cached_jsons]
+
+    cached_json_names = [fp.stem for fp in cached_jsons]
+    composites += [load_composite_from_bgw(fp, verbose=verbose) for fp in path.glob('*@*.bgw')
+                   if fp.stem not in cached_json_names]
+
     composites.sort(key=lambda c: c.time)
 
     if verbose:
