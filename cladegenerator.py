@@ -6,9 +6,12 @@ from lib import loader, draw
 
 
 def main():
-    path = Path(filedialog.askdirectory())
-    saves = loader.load_composites(path, verbose=True)
+    path = filedialog.askdirectory()
+    if path == "":
+        return
+    path = Path(path)
 
+    saves = loader.load_composites(path, verbose=True)
     if not saves:
         print("No world files detected!")
         input()
