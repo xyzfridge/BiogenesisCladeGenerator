@@ -26,6 +26,10 @@ GENRATION_MIN_HEIGHT = 160
 POPULATION_THRESHOLD = 10
 
 
+class NoGenerationsError(ValueError):
+    pass
+
+
 class CladeDraw(ImageDraw.ImageDraw):
     def organism(self, xy: tuple[int, int], organism: Organism):
         for segment in organism.segment_tree.segments():
@@ -352,6 +356,9 @@ class CladeGeneration:
 
 class CladeDiagram:
     def __init__(self, generation_worlds: list[WorldComposite]):
+        if not generation_worlds:
+            raise NoGenerationsError()
+
         print("Initializing clade...")
         self.generations: list[CladeGeneration] = [CladeGeneration(self, w.species) for w in generation_worlds]
 
