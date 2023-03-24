@@ -6,8 +6,17 @@ from lib import loader, draw
 
 
 def main():
-    path = Path(filedialog.askdirectory())
+    path = filedialog.askdirectory()
+    if path == "":
+        return
+    path = Path(path)
+
     saves = loader.load_composites(path, verbose=True)
+    if not saves:
+        print("No world files detected!")
+        input()
+        return
+
     clade = draw.CladeDiagram(saves)
     clade.render_to_file(path / "clade.png")
 
