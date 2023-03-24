@@ -17,6 +17,7 @@ def main():
     cladegenerator = dist / "cladegenerator"
 
     shutil.copy2("cladegenerator.py", cladegenerator)
+    shutil.copy2("README.txt", cladegenerator)
     shutil.copytree("lib", cladegenerator / "lib")
 
     pack = Path("pack")
