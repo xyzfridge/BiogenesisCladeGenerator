@@ -93,7 +93,7 @@ class DiagramBubble:
         else:
             positions.append(EDGE_MARGIN + self.radius)
 
-        if (parent := self.cspecies.get_parent()) is not None:
+        if (parent := self.cspecies.parent) is not None:
             positions.append(parent.diagram_element.x)
 
         # self._x = max(positions)
@@ -153,7 +153,7 @@ class DiagramBubble:
         species = self.cspecies
         representative = species.representative
         if len(children := species.get_children()) == 1 \
-        and (parent := species.get_parent()) is not None \
+        and (parent := species.parent) is not None \
         and len(parent.get_children()) == 1 \
         and representative == parent.representative \
         and representative == children[0].representative:
@@ -173,8 +173,6 @@ class CladeSpecies:
         self.generation: CladeGeneration = generation
         self.species: Species = species
         self.diagram_element = DiagramBubble(self)
-
-        self._parent: CladeSpecies or None = None
 
         self._children: list[CladeSpecies] or None
         self._child_generation_count: int or None
@@ -217,10 +215,8 @@ class CladeSpecies:
 
         return None
 
-    def get_parent(self) -> CladeSpecies or None:
-        if (parent := self._parent) is not None:
-            return parent
-
+    @cached_property
+    def parent(self) -> CladeSpecies or None:
         if (previous_generation := self.generation.previous()) is None:
             return None
 
@@ -230,8 +226,8 @@ class CladeSpecies:
             return None
 
         candidates.sort(key=lambda s: self.clade.distance_from(s.clade))
-        self._parent = candidates[0]
-        return self._parent
+
+        return candidates[0]
 
     def get_children(self) -> list[CladeSpecies]:
         if (children := self._children) is not None:
@@ -240,7 +236,7 @@ class CladeSpecies:
         if (next_generation := self.generation.next()) is None:
             return []
 
-        self._children = [s for s in next_generation.species if s.get_parent() is self]
+        self._children = [s for s in next_generation.species if s.parent is self]
         return self._children
 
     def child_generations(self, stop: int or None = None) -> Generator[list[CladeSpecies]]:
@@ -273,7 +269,7 @@ class CladeSpecies:
         if self.population >= POPULATION_THRESHOLD:
             return True
 
-        if (parent := self.get_parent()) is not None:
+        if (parent := self.parent) is not None:
             if parent.clade == self.clade and parent.should_include():
                 return True
 
