@@ -392,9 +392,14 @@ class CladeDiagram:
         return height
 
     def bubbles(self) -> Generator[DiagramBubble]:
+        species_queue = []
         for generation in self.generations:
-            for species in generation.species:
+            species_queue += [s for s in generation.species if s.parent is None]
+
+            while species_queue:
+                species = species_queue.pop(0)
                 yield species.bubble
+                species_queue = species.get_children() + species_queue
 
     def render_to_file(self, path):
         print("Initializing image...")
