@@ -33,6 +33,22 @@ def load_bgw(path, verbose=False):
         return javaobj.load(bgw_file)
 
 
+def _strip_key_underscores(d: dict, recursive=False):
+    keys = list(d.keys())
+    for k, v in list(d.items()):
+        if (k_stripped := k.lstrip("_")) not in keys:
+            del d[k]
+            d[k_stripped] = v
+
+        if recursive:
+            if isinstance(v, dict):
+                _strip_key_underscores(v, True)
+            elif isinstance(v, list):
+                for item in v:
+                    if isinstance(item, dict):
+                        _strip_key_underscores(item, True)
+
+
 def javaobj_to_data(jobj: Any, _stack=None):
     _stack = _IdentityDict() if _stack is None else _stack
 
@@ -55,13 +71,14 @@ def javaobj_to_data(jobj: Any, _stack=None):
             return container
 
         case javaobj.beans.JavaInstance():
-            container = {}
             classdict = jobj.field_data[jobj.classdesc]
             field_names = [f.name for f in classdict.keys()]
             field_values = list(classdict.values())
-            for k, v in zip(field_names, field_values):
-                k_stripped = k.lstrip("_")
-                k = k_stripped if k_stripped not in field_names else k
+            container = dict(zip(field_names, field_values))
+
+            _strip_key_underscores(container)
+
+            for k, v in list(container.items()):
                 container[k] = recur(v, container)
 
             return container
@@ -91,6 +108,25 @@ def load_bgw_as_world(path, verbose=False):
     return World(load_bgw_data(path, verbose))
 
 
+def load_json_data(path, verbose=False):
+    path = Path(path)
+
+    with path.open('r') as json_file:
+        data = json.load(json_file)
+
+    _strip_key_underscores(data, recursive=True)
+    data["organisms"] = {"list": data["organisms"]}
+
+    if verbose:
+        print(f"Read {path.name}.")
+
+    return data
+
+
+def load_json_as_world(path, verbose=False):
+    return World(load_json_data(path, verbose))
+
+
 def _get_clade_dir(path):
     path = Path(path)
 
@@ -111,7 +147,7 @@ def _get_clade_cache_dir(path):
     return cache_dir
 
 
-def load_composite_from_bgw(path, verbose=False) -> WorldComposite:
+def load_composite_from_save(path, verbose=False) -> WorldComposite:
     path = Path(path)
 
     cache = _get_clade_cache_dir(path.parent)
@@ -119,7 +155,14 @@ def load_composite_from_bgw(path, verbose=False) -> WorldComposite:
     if (cached_composite := cache / f"{path.stem}.json").exists():
         return load_composite_from_cache(cached_composite, verbose)
     else:
-        world = load_bgw_as_world(path, verbose=verbose)
+        match path.suffix:
+            case '.json':
+                world = load_json_as_world(path, verbose=verbose)
+            case '.bgw':
+                world = load_bgw_as_world(path, verbose=verbose)
+            case _:
+                raise ValueError()
+
         composite = WorldComposite(world)
 
         with cached_composite.open('w') as file:
@@ -144,17 +187,33 @@ def load_composite_from_cache(path, verbose=False):
     return composite
 
 
+def _to_names(fps: list[Path]):
+    return [fp.stem for fp in fps]
+
+
 def load_composites(path, verbose=False) -> list[WorldComposite]:
     path = Path(path)
 
     composites = []
+    loaded_names = []
 
-    cached_jsons = [fp for fp in _get_clade_cache_dir(path).glob('*.json')]
-    composites += [load_composite_from_cache(fp, verbose=verbose) for fp in cached_jsons]
+    def not_loaded(fp):
+        return fp.stem not in loaded_names
 
-    cached_json_names = [fp.stem for fp in cached_jsons]
-    composites += [load_composite_from_bgw(fp, verbose=verbose) for fp in path.glob('*@*.bgw')
-                   if fp.stem not in cached_json_names]
+    cached_jsons = list(_get_clade_cache_dir(path).glob('*.json'))
+    composites += [load_composite_from_cache(fp, verbose=verbose) for fp in cached_jsons
+                   if not_loaded(fp)]
+    loaded_names += _to_names(cached_jsons)
+
+    json_saves = list(path.glob('*@*.json'))
+    composites += [load_composite_from_save(fp, verbose=verbose) for fp in json_saves
+                   if not_loaded(fp)]
+    loaded_names += _to_names(json_saves)
+
+    bgw_saves = list(path.glob('*@*.bgw'))
+    composites += [load_composite_from_save(fp, verbose=verbose) for fp in bgw_saves
+                   if not_loaded(fp)]
+    # loaded_names += _to_names(bgw_saves)
 
     composites.sort(key=lambda c: c.time)
 

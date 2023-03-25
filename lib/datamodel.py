@@ -209,7 +209,11 @@ class Gene(DataContainer):
 
     @cached_property
     def color(self) -> Color:
-        return Color(self._get("color", "value"))
+        try:
+            color_data = tuple(self._get("color", k) for k in ('r', 'g', 'b'))
+        except DataNotFound:
+            color_data = self._get("color", "value")
+        return Color(color_data)
 
 
 class Clade:

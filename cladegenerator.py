@@ -1,3 +1,4 @@
+import tkinter
 from tkinter import filedialog
 from pathlib import Path
 import traceback
@@ -6,6 +7,10 @@ from lib import loader, draw
 
 
 def main():
+    tk = tkinter.Tk()
+    tk.withdraw()
+    tk.iconbitmap("icon.ico")
+
     path = filedialog.askdirectory()
     if path == "":
         return
@@ -22,11 +27,13 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as exception:
-        with open("log.txt", "w") as log_file:
-            traceback.print_exception(exception, file=log_file)
+    main()
 
-        traceback.print_exception(exception)
-        input()
+    # try:
+    #     main()
+    # except Exception as exception:
+    #     with open("log.txt", "w") as log_file:
+    #         traceback.print_exception(exception, file=log_file)
+    #
+    #     traceback.print_exception(exception)
+    #     input()
