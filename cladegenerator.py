@@ -27,11 +27,13 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as exception:
-        with open("log.txt", "w") as log_file:
-            traceback.print_exception(exception, file=log_file)
+    main()
 
-        traceback.print_exception(exception)
-        input()
+    # try:
+    #     main()
+    # except Exception as exception:
+    #     with open("log.txt", "w") as log_file:
+    #         traceback.print_exception(exception, file=log_file)
+    #
+    #     traceback.print_exception(exception)
+    #     input()
