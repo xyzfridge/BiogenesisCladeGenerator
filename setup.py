@@ -3,7 +3,7 @@ from pathlib import Path
 import shutil
 
 
-VERSION = "0.0.4"
+VERSION = "0.0.5"
 
 DIST = Path("dist")
 CLADEGENERATOR = DIST / "cladegenerator"

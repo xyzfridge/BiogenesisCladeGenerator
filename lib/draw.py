@@ -53,7 +53,7 @@ class CladeDraw(ImageDraw.ImageDraw):
 
 
 def _aggregate_width(species: list[CladeSpecies]):
-    bubbles = [s.diagram_element for s in species]
+    bubbles = [s.bubble for s in species]
     return sum(b.base_width_allocation() for b in bubbles)
 
 
@@ -77,7 +77,7 @@ class DiagramBubble:
                 bubbles = []
                 for species in self.cspecies.before():
                     for generation in species.child_generations(own_child_count):
-                        bubbles.append(generation[-1].diagram_element)
+                        bubbles.append(generation[-1].bubble)
                 bubble = max(bubbles, key=lambda b: b.x)
 
                 positions.append(self._x_from(bubble))
@@ -93,8 +93,8 @@ class DiagramBubble:
         else:
             positions.append(EDGE_MARGIN + self.radius)
 
-        if (parent := self.cspecies.get_parent()) is not None:
-            positions.append(parent.diagram_element.x)
+        if (parent := self.cspecies.parent) is not None:
+            positions.append(parent.bubble.x)
 
         # self._x = max(positions)
         # return self._x
@@ -133,7 +133,7 @@ class DiagramBubble:
 
     def previous(self) -> DiagramBubble or None:
         if (previous_species := self.cspecies.previous()) is not None:
-            return previous_species.diagram_element
+            return previous_species.bubble
 
         return None
 
@@ -143,7 +143,7 @@ class DiagramBubble:
     @cached_property
     def _column_radius(self):
         radii = [self.radius]
-        radii += [cg[0].diagram_element.radius for cg in self.cspecies.child_generations()]
+        radii += [cg[0].bubble.radius for cg in self.cspecies.child_generations()]
         return max(radii)
 
     def _x_from(self, other: DiagramBubble):
@@ -153,7 +153,7 @@ class DiagramBubble:
         species = self.cspecies
         representative = species.representative
         if len(children := species.get_children()) == 1 \
-        and (parent := species.get_parent()) is not None \
+        and (parent := species.parent) is not None \
         and len(parent.get_children()) == 1 \
         and representative == parent.representative \
         and representative == children[0].representative:
@@ -172,9 +172,7 @@ class CladeSpecies:
     def __init__(self, generation: CladeGeneration, species: Species):
         self.generation: CladeGeneration = generation
         self.species: Species = species
-        self.diagram_element = DiagramBubble(self)
-
-        self._parent: CladeSpecies or None = None
+        self.bubble = DiagramBubble(self)
 
         self._children: list[CladeSpecies] or None
         self._child_generation_count: int or None
@@ -217,10 +215,8 @@ class CladeSpecies:
 
         return None
 
-    def get_parent(self) -> CladeSpecies or None:
-        if (parent := self._parent) is not None:
-            return parent
-
+    @cached_property
+    def parent(self) -> CladeSpecies or None:
         if (previous_generation := self.generation.previous()) is None:
             return None
 
@@ -230,8 +226,8 @@ class CladeSpecies:
             return None
 
         candidates.sort(key=lambda s: self.clade.distance_from(s.clade))
-        self._parent = candidates[0]
-        return self._parent
+
+        return candidates[0]
 
     def get_children(self) -> list[CladeSpecies]:
         if (children := self._children) is not None:
@@ -240,7 +236,7 @@ class CladeSpecies:
         if (next_generation := self.generation.next()) is None:
             return []
 
-        self._children = [s for s in next_generation.species if s.get_parent() is self]
+        self._children = [s for s in next_generation.species if s.parent is self]
         return self._children
 
     def child_generations(self, stop: int or None = None) -> Generator[list[CladeSpecies]]:
@@ -273,7 +269,7 @@ class CladeSpecies:
         if self.population >= POPULATION_THRESHOLD:
             return True
 
-        if (parent := self.get_parent()) is not None:
+        if (parent := self.parent) is not None:
             if parent.clade == self.clade and parent.should_include():
                 return True
 
@@ -340,13 +336,13 @@ class CladeGeneration:
         if not self.species:
             return BUBBLE_MIN_RADIUS * 2
 
-        return max(s.diagram_element.diameter for s in self.species)
+        return max(s.bubble.diameter for s in self.species)
 
     def width(self) -> int:
         if not self.species:
             return BUBBLE_MIN_RADIUS * 2 + EDGE_MARGIN * 2
 
-        last_bubble = self.species[-1].diagram_element
+        last_bubble = self.species[-1].bubble
         return last_bubble.x + last_bubble.radius + EDGE_MARGIN
 
     def y_pos(self) -> int:
@@ -396,9 +392,14 @@ class CladeDiagram:
         return height
 
     def bubbles(self) -> Generator[DiagramBubble]:
+        species_queue = []
         for generation in self.generations:
-            for species in generation.species:
-                yield species.diagram_element
+            species_queue += [s for s in generation.species if s.parent is None]
+
+            while species_queue:
+                species = species_queue.pop(0)
+                yield species.bubble
+                species_queue = species.get_children() + species_queue
 
     def render_to_file(self, path):
         print("Initializing image...")
@@ -419,7 +420,7 @@ class CladeDiagram:
                 print(f"Drawing connectors... ({i}/{bubbles_count})")
 
             for child in bubble.cspecies.get_children():
-                bubble.draw_connector(draw, child.diagram_element)
+                bubble.draw_connector(draw, child.bubble)
 
         print("Drawing species bubbles...")
         for i, bubble in enumerate(bubbles):
