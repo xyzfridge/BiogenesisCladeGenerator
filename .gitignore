@@ -1,6 +1,6 @@
 /dist/
 /build/
-/spec/
 /.idea/
 /log.txt
 /pack/
+/cladegenerator.spec

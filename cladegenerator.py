@@ -1,3 +1,4 @@
+import tkinter
 from tkinter import filedialog
 from pathlib import Path
 import traceback
@@ -6,6 +7,10 @@ from lib import loader, draw
 
 
 def main():
+    tk = tkinter.Tk()
+    tk.withdraw()
+    tk.iconbitmap("icon.ico")
+
     path = filedialog.askdirectory()
     if path == "":
         return

@@ -5,23 +5,34 @@ import shutil
 
 VERSION = "0.0.4"
 
+DIST = Path("dist")
+CLADEGENERATOR = DIST / "cladegenerator"
+
+TO_PACK = [
+    "cladegenerator.py",
+    "README.txt",
+    "lib",
+    "icon.ico"
+]
+
 
 def main():
     PyInstaller.__main__.run([
         "cladegenerator.py",
         "--noconfirm",
-        "--specpath", "spec"
+        "--icon=icon.ico"
     ])
 
-    dist = Path(r"dist")
-    cladegenerator = dist / "cladegenerator"
-
-    shutil.copy2("cladegenerator.py", cladegenerator)
-    shutil.copy2("README.txt", cladegenerator)
-    shutil.copytree("lib", cladegenerator / "lib")
+    for path in (Path(fp) for fp in TO_PACK):
+        if path.is_file():
+            shutil.copy2(path, CLADEGENERATOR)
+        elif path.is_dir():
+            shutil.copytree(path, CLADEGENERATOR / path)
+        else:
+            print(f"!!!WARNING: Could not copy {path}!!!")
 
     pack = Path("pack")
-    shutil.make_archive(pack / f"cladegenerator-{VERSION}", "zip", dist)
+    shutil.make_archive(pack / f"cladegenerator-{VERSION}", "zip", DIST)
 
 
 if __name__ == "__main__":
