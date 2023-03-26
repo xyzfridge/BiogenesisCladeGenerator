@@ -65,9 +65,6 @@ class DiagramBubble:
 
     @cached_property
     def x(self) -> int:
-        # if (x := self._x) is not None:
-        #     return x
-
         positions = []
 
         if (previous := self.previous()) is not None:
@@ -96,9 +93,10 @@ class DiagramBubble:
         if (parent := self.cspecies.parent) is not None:
             positions.append(parent.bubble.x)
 
-        # self._x = max(positions)
-        # return self._x
         return max(positions)
+
+    def initialize_x(self) -> int:
+        return self.x
 
     @cached_property
     def y(self) -> int:
@@ -370,6 +368,9 @@ class CladeDiagram:
         for generation in self.generations:
             generation._post_update2()
         self._reset_cache()
+
+        for bubble in self.bubbles():
+            bubble.initialize_x()
 
         print("Completed clade diagram initialization.")
 
