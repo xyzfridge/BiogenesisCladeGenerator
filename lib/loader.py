@@ -200,17 +200,17 @@ def load_composites(path, verbose=False) -> list[WorldComposite]:
     def not_loaded(fp):
         return fp.stem not in loaded_names
 
-    cached_jsons = list(_get_clade_cache_dir(path).glob('*.json'))
+    cached_jsons = sorted(list(_get_clade_cache_dir(path).glob('*.json')))
     composites += [load_composite_from_cache(fp, verbose=verbose) for fp in cached_jsons
                    if not_loaded(fp)]
     loaded_names += _to_names(cached_jsons)
 
-    json_saves = list(path.glob('*@*.json'))
+    json_saves = sorted(list(path.glob('*@*.json')))
     composites += [load_composite_from_save(fp, verbose=verbose) for fp in json_saves
                    if not_loaded(fp)]
     loaded_names += _to_names(json_saves)
 
-    bgw_saves = list(path.glob('*@*.bgw'))
+    bgw_saves = sorted(list(path.glob('*@*.bgw')))
     composites += [load_composite_from_save(fp, verbose=verbose) for fp in bgw_saves
                    if not_loaded(fp)]
     # loaded_names += _to_names(bgw_saves)
