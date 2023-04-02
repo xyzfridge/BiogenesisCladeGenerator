@@ -7,23 +7,7 @@ from functools import cached_property
 
 from .datamodel import Organism, Clade
 from .composite import WorldComposite, Species
-
-DIAGRAM_COLOR = (169, 169, 169)
-LINE_THICKNESS = 3
-
-GENERATION_LINE_COLOR = (37, 63, 63)
-
-EDGE_MARGIN = 25
-
-BUBBLE_PADDING = 14
-BUBBLE_MIN_RADIUS = 24
-CONNECTOR_MARGIN = 45
-SPECIES_MARGIN = 60
-SPECIES_MIN_WIDTH = 80
-GENERATION_MARGIN = 150
-GENRATION_MIN_HEIGHT = 160
-
-POPULATION_THRESHOLD = 10
+from . import config
 
 
 class NoGenerationsError(ValueError):
@@ -42,14 +26,14 @@ class CladeDraw(ImageDraw.ImageDraw):
             (end[0], midrange),
             end
         )
-        self.line(xy, DIAGRAM_COLOR, LINE_THICKNESS)
+        self.line(xy, config.diagram_line_color.rgb, config.diagram_line_thickness)
 
     def circle(self, xy: tuple[int, int], radius: float):
         xy = (
             (round(xy[0] - radius), round(xy[1] - radius)),
             (round(xy[0] + radius), round(xy[1] + radius))
         )
-        self.ellipse(xy, outline=DIAGRAM_COLOR, fill=(0, 0, 0), width=LINE_THICKNESS)
+        self.ellipse(xy, outline=config.diagram_line_color.rgb, fill=(0, 0, 0), width=config.diagram_line_thickness)
 
 
 def _aggregate_width(species: list[CladeSpecies]):
@@ -70,13 +54,18 @@ class DiagramBubble:
         if (previous := self.previous()) is not None:
             positions.append(self._x_from(previous))
 
-            if (own_child_count := self.cspecies.child_generation_count()) > 0:
-                bubbles = []
-                for species in self.cspecies.before():
-                    for generation in species.child_generations(own_child_count):
-                        bubbles.append(generation[-1].bubble)
-                bubble = max(bubbles, key=lambda b: b.x)
+            own_child_count = self.cspecies.child_generation_count()
+            bubbles = []
+            for species in self.cspecies.before():
+                if config.extinction_dead_zone != -1:
+                    generator = species.child_generations(own_child_count + config.extinction_dead_zone)
+                else:
+                    generator = species.child_generations()
+                for generation in generator:
+                    bubbles.append(generation[-1].bubble)
 
+            if bubbles:
+                bubble = max(bubbles, key=lambda b: b.x)
                 positions.append(self._x_from(bubble))
 
             # if (previous_parent := previous.cspecies.get_parent()) is not None \
@@ -88,7 +77,7 @@ class DiagramBubble:
             #     bubble = max(previous_descendants_bubbles, key=lambda b: b.x())
             #     positions.append(self._x_from(bubble))
         else:
-            positions.append(EDGE_MARGIN + self.radius)
+            positions.append(config.edge_margin + self.radius)
 
         if (parent := self.cspecies.parent) is not None:
             positions.append(parent.bubble.x)
@@ -108,7 +97,7 @@ class DiagramBubble:
 
     @property
     def radius(self) -> int:
-        return max(round(self.organism.radius) + BUBBLE_PADDING, BUBBLE_MIN_RADIUS)
+        return max(round(self.organism.radius) + config.node_padding, config.node_min_radius)
 
     @property
     def diameter(self) -> int:
@@ -136,7 +125,7 @@ class DiagramBubble:
         return None
 
     def base_width_allocation(self) -> int:
-        return max(self.diameter + SPECIES_MARGIN, SPECIES_MIN_WIDTH)
+        return max(self.diameter + config.species_margin, config.species_min_width)
 
     @cached_property
     def _column_radius(self):
@@ -264,7 +253,7 @@ class CladeSpecies:
         return self._child_generation_count
 
     def should_include(self) -> bool:
-        if self.population >= POPULATION_THRESHOLD:
+        if self.population >= config.population_threshold:
             return True
 
         if (parent := self.parent) is not None:
@@ -272,7 +261,7 @@ class CladeSpecies:
                 return True
 
         for generation in self.child_generations():
-            if sum(s.population for s in generation) >= POPULATION_THRESHOLD:
+            if sum(s.population for s in generation) >= config.population_threshold:
                 return True
 
         return False
@@ -332,20 +321,20 @@ class CladeGeneration:
 
     def height(self) -> int:
         if not self.species:
-            return BUBBLE_MIN_RADIUS * 2
+            return config.node_min_radius * 2
 
         return max(s.bubble.diameter for s in self.species)
 
     def width(self) -> int:
         if not self.species:
-            return BUBBLE_MIN_RADIUS * 2 + EDGE_MARGIN * 2
+            return config.node_min_radius * 2 + config.edge_margin * 2
 
         last_bubble = self.species[-1].bubble
-        return last_bubble.x + last_bubble.radius + EDGE_MARGIN
+        return last_bubble.x + last_bubble.radius + config.edge_margin
 
     def y_pos(self) -> int:
-        y = EDGE_MARGIN
-        y += sum(max(g.height() + GENERATION_MARGIN, GENRATION_MIN_HEIGHT) for g in self.after())
+        y = config.edge_margin
+        y += sum(max(g.height() + config.generation_margin, config.generation_min_height) for g in self.after())
         y += self.height() / 2
         return y
 
@@ -387,9 +376,10 @@ class CladeDiagram:
 
     @cached_property
     def height(self) -> int:
-        height = sum(max(g.height() + GENERATION_MARGIN, GENRATION_MIN_HEIGHT) for g in self.generations[:-1])
+        height = sum(max(g.height() + config.generation_margin, config.generation_min_height)
+                     for g in self.generations[:-1])
         height += self.generations[-1].height()
-        height += EDGE_MARGIN * 2
+        height += config.edge_margin * 2
         return height
 
     def bubbles(self) -> Generator[DiagramBubble]:
@@ -407,10 +397,11 @@ class CladeDiagram:
         image = Image.new("RGB", (self.width, self.height), (0, 0, 0))
         draw = CladeDraw(image)
 
-        print("Drawing generation lines...")
-        for generation in self.generations:
-            y = generation.y_pos()
-            draw.line((0, y, self.width, y), GENERATION_LINE_COLOR)
+        if config.generation_lines_enabled:
+            print("Drawing generation lines...")
+            for generation in self.generations:
+                y = generation.y_pos()
+                draw.line((0, y, self.width, y), config.generation_line_color.rgb, config.generation_line_thickness)
 
         bubbles = list(self.bubbles())
         bubbles_count = len(bubbles)

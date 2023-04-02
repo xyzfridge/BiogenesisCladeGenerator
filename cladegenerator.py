@@ -3,7 +3,7 @@ from tkinter import filedialog
 from pathlib import Path
 import traceback
 
-from lib import loader, draw
+from lib import loader, draw, config
 
 
 def main():
@@ -22,8 +22,25 @@ def main():
         input()
         return
 
-    clade = draw.CladeDiagram(saves)
-    clade.render_to_file(path / "clade.png")
+    start, end = (i if i != -1 else len(saves) for i in (config.clade_start, config.clade_end))
+    saves = saves[start-1:end]
+
+    def generate_clade(gstart=0, glast=len(saves), gi=None):
+        if glast >= 0:
+            glast = min(glast, len(saves))
+        clade = draw.CladeDiagram(saves[gstart:glast])
+        number = f"-{gi + 1}" if gi is not None else ""
+        clade.render_to_file(path / f"clade{number}.{config.file_type}")
+
+    interval = config.clade_split_interval
+    if interval != -1:
+        start = 0
+        last = len(saves)
+        for i, end in enumerate(range(start+interval, last+interval, interval)):
+            generate_clade(start, end, i)
+            start = end
+    else:
+        generate_clade()
 
 
 if __name__ == "__main__":
