@@ -421,5 +421,5 @@ class CladeDiagram:
 
             node.draw(draw)
 
-        print("Writing clade.png...")
+        print(f"Writing {path.name}...")
         image.save(path)
