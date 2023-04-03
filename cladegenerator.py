@@ -57,6 +57,9 @@ def main():
 if __name__ == "__main__":
     try:
         main()
+    except MemoryError:
+        print(f"Ran out of memory! The clade diagram is likely too large to be rendered. Try setting "
+              f"clade_split_interval{' to a lower value' if config.clade_split_interval != -1 else ''} in the config.")
     except Exception as exception:
         with open("log.txt", "w") as log_file:
             traceback.print_exception(exception, file=log_file)
