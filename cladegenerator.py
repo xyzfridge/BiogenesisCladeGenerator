@@ -29,6 +29,7 @@ def main():
     def generate_clade(gstart=0, glast=len(saves), gi=None):
         if glast >= 0:
             glast = min(glast, len(saves))
+
         clade = draw.CladeDiagram(saves[gstart:glast])
         number = f"-{gi + 1}" if gi is not None else ""
         clade.render_to_file(seek(path, paths.EXPORT) / f"clade{number}.{config.file_type}")
