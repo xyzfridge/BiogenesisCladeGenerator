@@ -3,7 +3,8 @@ from tkinter import filedialog
 from pathlib import Path
 import traceback
 
-from lib import loader, draw, config
+from lib import loader, draw, config, paths
+from lib.paths import seek
 
 
 def main():
@@ -30,7 +31,7 @@ def main():
             glast = min(glast, len(saves))
         clade = draw.CladeDiagram(saves[gstart:glast])
         number = f"-{gi + 1}" if gi is not None else ""
-        clade.render_to_file(path / f"clade{number}.{config.file_type}")
+        clade.render_to_file(seek(path, paths.EXPORT) / f"clade{number}.{config.file_type}")
 
     interval = config.clade_split_interval
     if interval != -1:

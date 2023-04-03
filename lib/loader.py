@@ -5,8 +5,14 @@ from collections import UserDict
 from typing import Any
 from pathlib import Path
 
+from . import paths
 from .datamodel import World
 from .composite import WorldComposite
+from .paths import seek
+
+
+_OLD_CLADE_DIR = Path(".clade")
+_OLD_CACHE_DIR = _OLD_CLADE_DIR / "cache"
 
 
 class _IdentityDict(UserDict):
@@ -127,30 +133,10 @@ def load_json_as_world(path, verbose=False):
     return World(load_json_data(path, verbose))
 
 
-def _get_clade_dir(path):
-    path = Path(path)
-
-    clade_dir = path / ".clade"
-    if not clade_dir.exists():
-        clade_dir.mkdir()
-
-    return clade_dir
-
-
-def _get_clade_cache_dir(path):
-    clade_dir = _get_clade_dir(path)
-
-    cache_dir = clade_dir / "cache"
-    if not cache_dir.exists():
-        cache_dir.mkdir()
-
-    return cache_dir
-
-
 def load_composite_from_save(path, verbose=False) -> WorldComposite:
     path = Path(path)
 
-    cache = _get_clade_cache_dir(path.parent)
+    cache = seek(path.parent, paths.CACHE)
 
     if (cached_composite := cache / f"{path.stem}.json").exists():
         return load_composite_from_cache(cached_composite, verbose)
@@ -200,7 +186,7 @@ def load_composites(path, verbose=False) -> list[WorldComposite]:
     def not_loaded(fp):
         return fp.stem not in loaded_names
 
-    cached_jsons = sorted(list(_get_clade_cache_dir(path).glob('*.json')))
+    cached_jsons = sorted(list(seek(path, paths.CACHE).glob('*.json')))
     composites += [load_composite_from_cache(fp, verbose=verbose) for fp in cached_jsons
                    if not_loaded(fp)]
     loaded_names += _to_names(cached_jsons)
