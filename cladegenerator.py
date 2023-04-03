@@ -17,6 +17,13 @@ def main():
         return
     path = Path(path)
 
+    config_path, config_created = paths.config_status(path)
+    if config_created:
+        print(f"Created config.ini in {path.name}/clade. You may edit it now. (Be sure to save any changes.)")
+        print("Press enter to continue when ready...")
+        input()
+    config.update(config_path)
+
     saves = loader.load_composites(path, verbose=True)
     if not saves:
         print("No world files detected!")
