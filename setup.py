@@ -12,7 +12,8 @@ TO_PACK = [
     "cladegenerator.py",
     "README.txt",
     "lib",
-    "icon.ico"
+    "icon.ico",
+    "config.ini"
 ]
 
 
