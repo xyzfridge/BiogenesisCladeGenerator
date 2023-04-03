@@ -32,3 +32,11 @@ def config_status(master: Path) -> tuple[Path, bool]:
 
 def config(master: Path) -> Path:
     return config_status(master)[0]
+
+
+def clear(dir_path: Path):
+    for path in dir_path.iterdir():
+        if path.is_file():
+            path.unlink()
+        elif path.is_dir():
+            shutil.rmtree(path)

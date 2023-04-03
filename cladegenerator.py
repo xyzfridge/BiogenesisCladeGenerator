@@ -41,6 +41,8 @@ def main():
         number = f"-{gi + 1}" if gi is not None else ""
         clade.render_to_file(seek(path, paths.EXPORT) / f"clade{number}.{config.file_type}")
 
+    paths.clear(seek(path, paths.EXPORT))
+
     interval = config.clade_split_interval
     if interval != -1:
         start = 0
