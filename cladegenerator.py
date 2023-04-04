@@ -1,3 +1,4 @@
+import shutil
 import tkinter
 from tkinter import filedialog
 from pathlib import Path
@@ -17,6 +18,19 @@ def main():
         return
     path = Path(path)
 
+    # TODO: Remove this in 0.2.0
+    old_cache_dir = path / ".clade" / "cache"
+    if (old_cache_dir := (path / ".clade" / "cache")).exists():
+        print("0.0 clade directory detected. Copying cache files...")
+        new_cache_dir = seek(path, paths.CACHE)
+        for file in old_cache_dir.iterdir():
+            if file.is_file():
+                if (new_cache_dir / file.name).exists():
+                    file.unlink()
+                else:
+                    shutil.move(file, new_cache_dir)
+        print("Finished copying files from old directory.")
+
     config_path, config_created = paths.config_status(path)
     if config_created:
         print(f"Created config.ini in {path.name}/clade. You may edit it now. (Be sure to save any changes.)")
@@ -31,7 +45,7 @@ def main():
         return
 
     start, end = (i if i != -1 else len(saves) for i in (config.clade_start, config.clade_end))
-    saves = saves[start-1:end]
+    saves = saves[start - 1:end]
 
     def generate_clade(gstart=0, glast=len(saves), gi=None):
         if glast >= 0:
@@ -47,7 +61,7 @@ def main():
     if interval != -1:
         start = 0
         last = len(saves)
-        for i, end in enumerate(range(start+interval, last+interval, interval)):
+        for i, end in enumerate(range(start + interval, last + interval, interval)):
             generate_clade(start, end, i)
             start = end
     else:
