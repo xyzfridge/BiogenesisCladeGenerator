@@ -3,7 +3,7 @@ from pathlib import Path
 import shutil
 
 
-VERSION = "0.0.6"
+VERSION = "0.1.0"
 
 DIST = Path("dist")
 CLADEGENERATOR = DIST / "cladegenerator"
@@ -12,7 +12,8 @@ TO_PACK = [
     "cladegenerator.py",
     "README.txt",
     "lib",
-    "icon.ico"
+    "icon.ico",
+    "config.ini"
 ]
 
 
