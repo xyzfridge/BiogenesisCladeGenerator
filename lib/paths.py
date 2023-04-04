@@ -3,7 +3,7 @@ import shutil
 
 CLADE = Path("clade")
 CACHE = CLADE / ".cache"
-EXPORT = CLADE / "export"
+OUTPUT = CLADE / "output"
 
 CONFIG = CLADE / "config.ini"
 
