@@ -117,6 +117,9 @@ def load_bgw_as_world(path, verbose=False):
 def load_json_data(path, verbose=False):
     path = Path(path)
 
+    if verbose:
+        print(f"Reading {path.name}...")
+
     with path.open('r') as json_file:
         data = json.load(json_file)
 
@@ -148,6 +151,8 @@ def load_composite_from_save(path, verbose=False) -> WorldComposite:
                 world = load_bgw_as_world(path, verbose=verbose)
             case _:
                 raise ValueError()
+
+        print(f"Saving {path.name} to cache...")
 
         composite = WorldComposite(world)
 
