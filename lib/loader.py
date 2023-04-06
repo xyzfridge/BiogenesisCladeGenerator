@@ -185,26 +185,20 @@ def _to_names(fps: list[Path]):
 def load_composites(path, verbose=False) -> list[WorldComposite]:
     path = Path(path)
 
-    composites = []
-    loaded_names = []
+    files_to_load = []
+    cataloged_checkpoints = set()
 
-    def not_loaded(fp):
-        return fp.stem not in loaded_names
+    for directory, pattern, load in [
+        (seek(path, paths.CACHE), '*.json', load_composite_from_cache),
+        (path, '*@*.json', load_composite_from_save),
+        (path, '*@*.bgw', load_composite_from_save)
+    ]:
+        for file in sorted(list(directory.glob(pattern))):
+            if file.stem not in cataloged_checkpoints:
+                files_to_load.append((file, load))
+            cataloged_checkpoints.add(file.stem)
 
-    cached_jsons = sorted(list(seek(path, paths.CACHE).glob('*.json')))
-    composites += [load_composite_from_cache(fp, verbose=verbose) for fp in cached_jsons
-                   if not_loaded(fp)]
-    loaded_names += _to_names(cached_jsons)
-
-    json_saves = sorted(list(path.glob('*@*.json')))
-    composites += [load_composite_from_save(fp, verbose=verbose) for fp in json_saves
-                   if not_loaded(fp)]
-    loaded_names += _to_names(json_saves)
-
-    bgw_saves = sorted(list(path.glob('*@*.bgw')))
-    composites += [load_composite_from_save(fp, verbose=verbose) for fp in bgw_saves
-                   if not_loaded(fp)]
-    # loaded_names += _to_names(bgw_saves)
+    composites = [l(f, verbose=verbose) for f, l in files_to_load]
 
     composites.sort(key=lambda c: c.time)
 
