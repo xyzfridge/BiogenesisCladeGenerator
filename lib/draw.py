@@ -288,14 +288,15 @@ class CladeGeneration:
     def _post_update2(self):
         # TODO: More advanced space optimization
 
-        if (previous_generation := self.previous()) is not None:
-            updated_species = []
-            previous_species = previous_generation.species
-            for species in previous_species:
-                updated_species += _sorted_by_child_count(species.get_children())
-            updated_species += _sorted_by_child_count([s for s in self.species if s not in updated_species])
+        updated_species = []
 
-            self.species = updated_species
+        if (previous_generation := self.previous()) is not None:
+            for species in previous_generation.species:
+                updated_species += _sorted_by_child_count(species.get_children())
+
+        updated_species += sorted([s for s in self.species if s not in updated_species], key=lambda s: s.clade.string)
+
+        self.species = updated_species
 
     def add_species(self, species: CladeSpecies):
         self.species.append(species)
